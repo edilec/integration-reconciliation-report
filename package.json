@@ -1,0 +1,17 @@
+{
+  "name": "integration-reconciliation-report",
+  "version": "0.0.0",
+  "description": "Compare source and destination records and produce a reconciliation queue.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edilec/integration-reconciliation-report"
+  }
+}
