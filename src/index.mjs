@@ -102,6 +102,7 @@ export const RULE_SEVERITY = Object.freeze({
   'input-not-utf8': 'error',
   'input-too-large': 'error',
   'input-unreadable': 'error',
+  'inputs-are-one-file': 'error',
   'key-case-collision': 'warning',
   'no-fields-declared': 'error',
   'no-records-evaluated': 'error',
@@ -439,6 +440,19 @@ export async function reconcileExports(options = {}) {
   const state = emptyState()
   const counts = { planName, sourceRecords: 0, destinationRecords: 0, unindexed: 0, fields: 0, key: [] }
 
+  /**
+   * Two names for one file, caught by inode rather than by path.
+   *
+   * `realpath` resolves a symbolic link, so a source that is a link to the
+   * destination collapses to one real path and is caught by comparing them.
+   * A **hard link** has no target: two names for one inode are two distinct
+   * real paths, and a path comparison passes. Reconciling a file against
+   * itself matches every key and proves nothing -- a vacuous green -- so the
+   * identity of each input is taken from its device and inode numbers.
+   */
+  const identities = new Map()
+  let identityConflict = false
+
   const documents = {}
   for (const [kind, name] of [['plan', planName], ['source', sourceName], ['destination', destinationName]]) {
     const located = await resolveInput(realRoot, name)
@@ -462,6 +476,30 @@ export async function reconcileExports(options = {}) {
       documents[kind] = null
       continue
     }
+    let info = null
+    try {
+      info = await stat(located.real)
+    } catch {
+      info = null
+    }
+    if (info !== null && info.isFile()) {
+      const identity = `${info.dev}:${info.ino}`
+      const previous = identities.get(identity)
+      if (previous === undefined) identities.set(identity, name)
+      else {
+        identityConflict = true
+        state.incomplete = true
+        sink.add({
+          file: name,
+          ruleId: 'inputs-are-one-file',
+          message:
+            `${name} and ${previous} are two names for one file on disk, so nothing was reconciled. ` +
+            'A file joined against itself matches every key and proves nothing.',
+          suggestion: 'Name two different exports. A hard link is two names for one inode, which no path comparison can tell apart.',
+        })
+      }
+    }
+
     const loaded = await loadJson(sink, name, located.real, limits)
     if (loaded === null) state.incomplete = true
     documents[kind] = loaded
@@ -502,7 +540,7 @@ export async function reconcileExports(options = {}) {
   }
 
   let joined = false
-  if (plan !== null && sides.source !== null && sides.destination !== null) {
+  if (plan !== null && sides.source !== null && sides.destination !== null && !identityConflict) {
     joined = true
     const outcome = reconcileSides(sink, files, plan, sides.source, sides.destination, limits)
     state.keys = outcome.keys
