@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "records": [
+    {
+      "invoiceId": "INV-1001",
+      "amount": "1250.00",
+      "currency": "INR",
+      "postedAt": "2026-03-01T20:30:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-1002",
+      "amount": "980.5",
+      "currency": "INR",
+      "postedAt": "2026-03-02",
+      "status": "posted"
+    },
+    {
+      "invoiceId": "INV-1003",
+      "amount": 4200,
+      "currency": "INR",
+      "postedAt": "2026-03-03T04:15:00Z",
+      "status": "  Settled  "
+    }
+  ]
+}

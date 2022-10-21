@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1",
+  "records": [
+    {
+      "invoiceId": "INV-2001",
+      "amount": "1250.00",
+      "currency": "INR",
+      "postedAt": "2026-03-01T20:30:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-2002",
+      "amount": "500.00",
+      "currency": "INR",
+      "postedAt": "2026-03-02T05:00:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-2002",
+      "amount": "500.00",
+      "currency": "INR",
+      "postedAt": "2026-03-02T05:00:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-2003",
+      "amount": "75.00",
+      "currency": "INR",
+      "postedAt": "2026-03-03T05:00:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-2005",
+      "amount": "99.00",
+      "currency": "INR",
+      "postedAt": "2026-03-05T05:00:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "inv-2001",
+      "amount": "10.00",
+      "currency": "INR",
+      "postedAt": "2026-03-06T05:00:00Z",
+      "status": "Posted"
+    }
+  ]
+}

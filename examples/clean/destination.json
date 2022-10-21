@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1",
+  "records": [
+    {
+      "invoiceId": "INV-1001",
+      "amount": "1250.0",
+      "currency": "INR",
+      "postedAt": "2026-03-02T02:00:00+05:30",
+      "status": "posted",
+      "ledgerLine": 41
+    },
+    {
+      "invoiceId": "INV-1002",
+      "amount": "980.50",
+      "currency": "INR",
+      "postedAt": "2026-03-02T18:45:00+05:30",
+      "status": "POSTED",
+      "ledgerLine": 42
+    },
+    {
+      "invoiceId": "INV-1003",
+      "amount": "4200.00",
+      "currency": "INR",
+      "postedAt": "2026-03-03T09:45:00+05:30",
+      "status": "Settled",
+      "ledgerLine": 43
+    }
+  ]
+}
