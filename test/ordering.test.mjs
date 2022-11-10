@@ -156,6 +156,26 @@ test('site 5: the key walk order decides which keys a cut-off reaches', async ()
   }
 })
 
+test('site 6: over record pointers a plain collator is equivalent, proven over every ordered pair', () => {
+  // The duplicate listing only ever holds "/records/<index>", so its whole
+  // alphabet after a fixed prefix is the ASCII digits, over which plain
+  // collation and code-unit order cannot disagree. Rather than claim this site
+  // is pinned against a plain collator, the equivalence is proven exhaustively
+  // over the real values; the drift that *is* reachable here is a numeric
+  // collator, and the next test pins the emitted sequence against one.
+  const pointers = []
+  for (let index = 0; index <= 40; index += 1) pointers.push(`/records/${index}`)
+  let compared = 0
+  for (const left of pointers) {
+    for (const right of pointers) {
+      if (left === right) continue
+      compared += 1
+      assert.equal(Math.sign(collator.compare(left, right)), left < right ? -1 : 1, `${left} vs ${right}`)
+    }
+  }
+  assert.equal(compared, 1640, 'every ordered pair of the first forty-one record pointers')
+})
+
 test('site 6: the duplicate listing and its cut-off follow code units, not numbers', async () => {
   const rows = []
   for (let index = 0; index <= 10; index += 1) rows.push(row({ invoiceId: 'INV-1', amount: `${index}.00` }))
