@@ -160,8 +160,16 @@ and granularity. That is all it means.
 - It does no fuzzy matching, no similarity scoring and no transitive
   reconciliation. Two rows join when their declared key components are equal as
   text, and not otherwise.
-- It does not support named IANA timezones, leap seconds, or currencies with a
-  minor unit that is not a power of ten. Each is reported as unsupported.
+- It does not support named IANA timezones. A named zone is reported as
+  `plan-timezone-unsupported`, nothing is compared on that field and the run is
+  `incomplete`. A leap second is a separate matter: `23:59:60` is not an
+  instant this tool can place, so it is refused as `date-invalid` — a refusal
+  of that one value, not support for the leap-second calendar.
+- It knows no currency's minor unit. An amount is compared at the precision the
+  plan declares and at no other, and `currencyField` only checks that both
+  sides carry the same three-letter code. A currency whose smallest unit is not
+  a power of ten — MGA and MRU are fifths — is compared at the declared
+  precision like every other, and nothing reports it.
 - It reads no database, calls no API and opens no socket. There is no "pull the
   live side" mode.
 - It is read-only and writes nothing. A run leaves its root byte-identical.

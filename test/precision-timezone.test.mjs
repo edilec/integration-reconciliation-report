@@ -265,6 +265,16 @@ test('the calendar is checked, so a day that does not exist is refused', async (
   assert.equal(notLeap.status, 'incomplete', 'a rolled-forward 2026-02-29 would have matched 2026-03-01')
 })
 
+test('a leap second is refused as an instant this tool cannot place', async () => {
+  const fields = dateAt('Z', 'instant')
+  const report = await compareBeside(fields, dated('2016-12-31T23:59:60Z'), dated('2016-12-31T23:59:59Z'))
+
+  assert.deepEqual(raisedRules(report), ['date-invalid'])
+  assert.equal(report.summary.matched, 1, 'the control key only; 23:59:60 was not rolled forward into the next second')
+  assert.equal(report.summary.unevaluated, 1)
+  assert.equal(report.status, 'incomplete', 'a leap second is refused, and the refusal is not a rule about leap seconds')
+})
+
 test('a named timezone is reported as unsupported, never treated as UTC', async () => {
   const result = await cliReport(fixture(
     [dated('2026-03-01T20:30:00Z')],
@@ -304,4 +314,35 @@ test('a declared currency the export does not carry is unknown evidence, not an 
   assert.deepEqual(raisedRules(report), ['field-evidence-missing'])
   assert.equal(report.summary.matched, 1, 'the control key only')
   assert.equal(report.status, 'incomplete')
+})
+
+/**
+ * The limit `README.md` states, pinned so the two cannot drift apart.
+ *
+ * MGA and MRU subdivide by five rather than by a power of ten. This tool holds
+ * no table of currency minor units and reports nothing about one: the declared
+ * precision is the only precision there is, and `currencyField` only checks
+ * that both sides carry the same three-letter code. If that ever changes, this
+ * test goes red and the non-goal in the README has to be rewritten with it.
+ */
+test('no currency minor unit is known, so the declared precision is the only precision', async () => {
+  const fields = [{ name: 'amount', type: 'amount', precision: 2, currencyField: 'currency' }]
+
+  const quiet = await cliReport(fixture(
+    [row({ invoiceId: 'INV-1', amount: '1250.00', currency: 'MGA' }), row({ invoiceId: 'INV-2', amount: '99.00', currency: 'MRU' })],
+    [row({ invoiceId: 'INV-1', amount: '1250.00', currency: 'MGA' }), row({ invoiceId: 'INV-2', amount: '99.00', currency: 'MRU' })],
+    fields,
+  ))
+  assert.deepEqual(raisedRules(quiet.report), [], 'nothing reports a currency whose minor unit is not a power of ten')
+  assert.equal(quiet.report.status, 'pass')
+  assert.equal(quiet.report.summary.matched, 2)
+  assert.equal(quiet.code, 0)
+
+  const over = await compareBeside(
+    fields,
+    row({ amount: '1250.004', currency: 'MGA' }),
+    row({ amount: '1250.00', currency: 'MGA' }),
+  )
+  assert.deepEqual(raisedRules(over), ['amount-exceeds-declared-precision'], 'the declared precision decides, whatever the currency is')
+  assert.equal(over.status, 'incomplete')
 })
