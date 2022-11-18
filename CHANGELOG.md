@@ -105,10 +105,12 @@ All notable changes to this project are documented in this file.
   anything else in the suite.
 - No wall clock, locale-aware comparison, random source, network access or
   filesystem enumeration order affects the output. Ordering is pinned by
-  asserting the emitted sequence at each of the eight sites that order
-  something, for inputs a collator orders the other way round; the one site
-  whose real values make both comparators identical is proven equivalent over
-  every ordered pair rather than claimed to be pinned.
+  asserting the emitted sequence at six of the eight sites that order
+  something, for inputs a collator orders the other way round; the two sites
+  whose real values make both comparators identical -- the known-limit list and
+  the record listing inside a duplicated group -- are proven equivalent over
+  every ordered pair rather than claimed to be pinned, and the listing is
+  pinned against a numeric collator, which its values *can* tell apart.
 - This tool can show that two exports disagree. It cannot show that two systems
   agree, and it does not claim otherwise. `README.md` and
   `docs/reconciliation-rules.md` both state what a `pass` does and does not

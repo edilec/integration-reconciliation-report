@@ -201,11 +201,20 @@ and granularity. That is all it means.
   verdict, and a literal error count plus the printed severity word where the
   run is incomplete either way. `test/severity-word.test.mjs` shares no map, no
   table and no builder with anything else.
-- **Ordering is pinned behaviourally, at every site.** A scan for
+- **Ordering is decided by code unit, and defended at every site.** A scan for
   `.localeCompare(` is not a determinism test — `Intl.Collator` collates
   identically and spells differently. `test/ordering.test.mjs` has a case for
-  each of the eight places this tool orders something, using values the two
-  comparators genuinely disagree about, and asserts the exact emitted sequence.
+  each of the eight places this tool orders something. **Six** are pinned with
+  values the two comparators genuinely disagree about — `Z` against `a`, `a-b`
+  against `a_b`, `INV-a` against `inv-a` — asserting the exact emitted
+  sequence. The other **two** admit no such value: the list of known limit
+  names in one diagnostic is lower camel case over `[A-Za-z]`, and the record
+  listing inside a duplicated group is `/records/` followed by digits, and a
+  plain collator cannot order either differently. Those two are reported as
+  equivalent mutants and *proven* so — exhaustively, over every ordered pair of
+  the eight real limit names and of the first forty-one record pointers — not
+  claimed to be pinned. The drift that is reachable at the listing is a
+  *numeric* collator, and the emitted sequence is pinned against one.
 - **Every untrusted string is sanitised** — join keys, field names, paths,
   pointers, messages, suggestions and evidence alike — of C0, DEL, the whole C1
   range, U+2028, U+2029 and the bidi controls. A key carrying one of them is
