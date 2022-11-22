@@ -3,8 +3,8 @@ import { readFile, readdir } from 'node:fs/promises'
 import { isAbsolute, join } from 'node:path'
 import test from 'node:test'
 
-import { RULE_SEVERITY, compareFindings, exitCodeFor, serializeReport } from '../src/index.mjs'
-import { AMOUNT, apiReport, cliReport, fixture, projectDirectory, row } from './support.mjs'
+import { RULE_SEVERITY, exitCodeFor, serializeReport } from '../src/index.mjs'
+import { AMOUNT, apiReport, cliReport, fixture, planOf, projectDirectory, row, sideOf } from './support.mjs'
 
 /**
  * Package-level guarantees.
@@ -129,14 +129,41 @@ test('no host path from the machine the tool ran on reaches the report', async (
   assert.equal(/"file": "\//.test(result.stdout), false)
 })
 
-test('the emitted order is the order the documented sort key produces', async () => {
-  const report = await apiReport(fixture(
-    [row({ invoiceId: 'INV-1' }), row({ invoiceId: 'INV-2', amount: '2.00' })],
-    [row({ invoiceId: 'INV-3' })],
-    [AMOUNT],
-  ))
-  assert.equal(report.findings.length >= 3, true, 'the order being asserted is not a single element')
-  for (let index = 1; index < report.findings.length; index += 1) {
-    assert.equal(compareFindings(report.findings[index - 1], report.findings[index]) <= 0, true, `finding ${index} is out of order`)
-  }
+/**
+ * The emitted order, written out.
+ *
+ * Asserting `compareFindings(findings[i - 1], findings[i]) <= 0` over findings
+ * that `buildReport` sorted with `compareFindings` is self-referential: it
+ * holds for any comparator at all, including a reversed one, so it can only
+ * detect the removal of the `.sort()` call. The sequence below is a literal,
+ * and the fixture is built so that none of the three sort components agrees
+ * with the order the findings were produced in:
+ *
+ * - the walk visits INV-1, INV-2, INV-3, so the destination finding is created
+ *   **last** and sorts **first** -- `destination.json` before `source.json`;
+ * - within `source.json` the duplicate at `/records/1` is created before the
+ *   missing record at `/records/0`, and sorts after it;
+ * - the two findings that share a file *and* a pointer are separated by rule
+ *   id alone.
+ *
+ * `test/ordering.test.mjs` pins the same comparator at its call site with
+ * values a collator orders the other way round. This one pins the documented
+ * key -- file, then pointer, then rule id -- as a sequence a reader can check.
+ */
+test('the emitted order is the documented sort key, as an exact sequence', async () => {
+  const report = await apiReport({
+    'reconciliation.json': planOf([AMOUNT]),
+    'source.json': sideOf([row({ invoiceId: 'INV-2' }), row({ invoiceId: 'INV-1' }), row({ invoiceId: 'INV-1' })]),
+    'destination.json': sideOf([row({ invoiceId: 'INV-1' }), row({ invoiceId: 'INV-3' })]),
+  })
+
+  assert.deepEqual(
+    report.findings.map((finding) => `${finding.location.file}${finding.location.pointer} ${finding.ruleId}`),
+    [
+      'destination.json/records/1 record-missing-in-source',
+      'source.json/records/0 record-missing-in-destination',
+      'source.json/records/1 duplicate-key-in-source',
+      'source.json/records/1 duplicate-values-identical',
+    ],
+  )
 })

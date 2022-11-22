@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { link } from 'node:fs/promises'
+import { join } from 'node:path'
 import test from 'node:test'
 
 import { reconcileExports } from '../src/index.mjs'
@@ -29,9 +31,17 @@ import { AMOUNT, apiReport, findingsFor, fixture, planOf, raisedRules, row, side
  * 3. the unknown-option walk in `reconcileExports`
  * 4. the final findings sort in `buildReport`
  * 5. the key walk order in `reconcileSides`
- * 6. the duplicate record listing and its cut-off
+ * 6. the duplicate record listing and its cut-off (an equivalent site under a
+ *    plain collator, and pinned against a numeric one: see below)
  * 7. the missing-key-field list in `compileRecords`
  * 8. the colliding-key list in the case-collision rule
+ *
+ * Site 4 carries three further cases, because the comparator it uses is not
+ * one comparison but five -- file, pointer, rule id, message, evidence -- and
+ * `Array.prototype.sort` is stable, so a component that never decides anything
+ * in the fixtures can be deleted with the suite still green. Each of those
+ * cases builds findings that tie on every component before the one under test
+ * and are emitted in the order that component has to overturn.
  */
 
 const collator = new Intl.Collator('en')
@@ -129,6 +139,86 @@ test('site 4: the three input files sort into one documented order', async () =>
     [...new Set(report.findings.map((finding) => finding.location.file))],
     ['destination.json', 'source.json'],
   )
+})
+
+/**
+ * The last two components of the documented sort key -- message, then
+ * evidence -- which the three before them can hide.
+ *
+ * `Array.prototype.sort` is stable, so a component decides nothing unless two
+ * findings tie on every component before it *and* were emitted in the other
+ * order. Three case-collision findings tie on file, pointer and rule id by
+ * construction: all of them land at `reconciliation.json/key`. They are
+ * emitted in key-walk order, which runs over the JSON-encoded key -- `["0",..`
+ * then `["A!",..` then `["A",..`, because `!` sorts before the quote that ends
+ * a shorter component -- and the emitted sequence below is none of that:
+ *
+ * - the three-key group is emitted **first** and sorts **last**, because "2
+ *   join keys" precedes "3 join keys" in its message;
+ * - the two two-key groups tie on message to the character, so evidence alone
+ *   separates them, and it reads the *display* form, where ` | ` joins the
+ *   components: `A | Z` sorts before `A! | Z` exactly where the walk put
+ *   `A!` first.
+ */
+test('site 4: findings tied on file, pointer and rule id sort by message, then evidence', async () => {
+  const keys = [['0', 'BB'], ['0', 'Bb'], ['0', 'bb'], ['A!', 'Z'], ['a!', 'z'], ['A', 'Z'], ['a', 'z']]
+  const report = await apiReport({
+    'reconciliation.json': planOf([AMOUNT], ['a', 'b']),
+    'source.json': sideOf(keys.map(([a, b]) => ({ a, b, amount: '10.00' }))),
+    'destination.json': sideOf([]),
+  })
+  const collisions = findingsFor(report, 'key-case-collision')
+
+  assert.deepEqual(
+    collisions.map((finding) => finding.evidence),
+    ['keys: A | Z, a | z', 'keys: A! | Z, a! | z', 'keys: 0 | BB, 0 | Bb, 0 | bb'],
+    'the groups were emitted in the order 0, A!, A',
+  )
+  assert.equal(
+    new Set(collisions.map((finding) => `${finding.location.file}${finding.location.pointer} ${finding.ruleId}`)).size,
+    1,
+    'all three tie on file, pointer and rule id, so nothing earlier in the key can decide this',
+  )
+  assert.equal(
+    new Set(collisions.slice(0, 2).map((finding) => finding.message)).size,
+    1,
+    'the two two-key groups tie on message as well, so the pair is separated by evidence alone',
+  )
+})
+
+/**
+ * The rule-id component, which the message after it can stand in for.
+ *
+ * Nearly every pair of findings that ties on file and pointer is ordered the
+ * same way by its rule id and by its message, so dropping the rule-id
+ * comparison changes nothing and no assertion can see it go. One pair is not:
+ * two inputs that are one file on disk, where that file is also not JSON. Both
+ * findings land at `destination.json` with an empty pointer and both messages
+ * open with that same file name, after which `and` precedes `is` -- so the
+ * message orders them `inputs-are-one-file` first while the rule id orders
+ * them `input-not-json` first, and only the rule id is allowed to decide.
+ */
+test('site 4: findings tied on file and pointer sort by rule id, not by message', async () => {
+  const report = await withRoot(
+    { 'reconciliation.json': planOf([AMOUNT]), 'source.json': '{ not json' },
+    async (root) => {
+      // A hard link is two names for one inode, and the file is not JSON, so
+      // both rules fire against the second name.
+      await link(join(root, 'source.json'), join(root, 'destination.json'))
+      return reconcileExports({ root })
+    },
+  )
+
+  assert.deepEqual(
+    report.findings.map((finding) => `${finding.location.file}${finding.location.pointer} ${finding.ruleId}`),
+    [
+      'destination.json input-not-json',
+      'destination.json inputs-are-one-file',
+      'source.json input-not-json',
+    ],
+  )
+  const [first, second] = report.findings
+  assert.equal(first.message > second.message, true, 'by message alone the other one would come first')
 })
 
 test('site 5: the key walk order decides which keys a cut-off reaches', async () => {
