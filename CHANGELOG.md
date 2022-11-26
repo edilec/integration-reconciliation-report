@@ -63,9 +63,11 @@ All notable changes to this project are documented in this file.
   an unknown CLI option on its way to stderr — covering C0 and DEL, the whole
   C1 range (U+0085 NEL forges a line of its own, U+009B is the 8-bit CSI),
   U+2028 and U+2029, and the bidi and isolate controls U+200E, U+200F,
-  U+202A–U+202E and U+2066–U+2069, which are also refused inside a join key.
-  Ordinary right-to-left letters are untouched: they carry their own direction
-  and need no override;
+  U+202A–U+202E and U+2066–U+2069, which are also refused inside a join key —
+  as is any whitespace the rendering would collapse, so that a key component is
+  printed verbatim and at its full length rather than as something four
+  distinct keys could share. Ordinary right-to-left letters are untouched: they
+  carry their own direction and need no override;
 - a CLI with `--help`, `--version`, `--json`, `--plan`, `--source`,
   `--destination` and the eight limit flags, the report on stdout, diagnostics
   on stderr, exit codes 0 / 1 / 2 with an empty stdout for a configuration

@@ -41,6 +41,37 @@ test('an identifier refuses every forbidden class outright rather than cleaning 
   }
 })
 
+/**
+ * The classes above are necessary and not sufficient.
+ *
+ * `excerpt` collapses every run of whitespace to one space, and JavaScript's
+ * `\s` is wider than the ASCII three. Four distinct keys that differ only by
+ * which space they carry all printed `INV- 1`, so the report named one key
+ * four times while grouping four -- through characters none of the four
+ * refused classes covers.
+ */
+test('an identifier must print as it was written, so no space the report would collapse', () => {
+  const collapsing = {
+    'no-break space': String.fromCharCode(0x00a0),
+    'figure space': String.fromCharCode(0x2007),
+    'ideographic space': String.fromCharCode(0x3000),
+    'zero width no-break space': String.fromCharCode(0xfeff),
+    'narrow no-break space': String.fromCharCode(0x202f),
+    tab: String.fromCharCode(0x09),
+  }
+  for (const [name, character] of Object.entries(collapsing)) {
+    const key = `INV-${character}1`
+    assert.equal(excerpt(key), 'INV- 1', `${name} does not print as written`)
+    assert.equal(isIdentifier(key), false, `${name} was accepted`)
+  }
+  assert.equal(isIdentifier('INV-  1'), false, 'a doubled space prints as one')
+
+  for (const good of ['INV-1001', 'INV- 1', 'INV 1 A', 'facture n.12']) {
+    assert.equal(isIdentifier(good), true, `${good} was refused`)
+    assert.equal(excerpt(good), good, `${good} does not print as written`)
+  }
+})
+
 test('ordinary right-to-left text is not an override and is left alone', () => {
   const hebrew = 'INV-אב'
   assert.equal(isIdentifier(hebrew), true)

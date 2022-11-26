@@ -79,6 +79,10 @@ const CONTROL = new RegExp(
  * ASCII whitespace controls `CONTROL` leaves to the collapse. An identifier
  * gets no second pass, and a join key that prints differently from the value
  * that was grouped is a key nobody can reconcile by hand.
+ *
+ * This class is necessary and it is not sufficient: `isIdentifier` also
+ * requires the value to survive `excerpt` unchanged, which is the property
+ * this comment is really claiming. See there.
  */
 const FORBIDDEN_IN_IDENTIFIER = new RegExp(
   `[${String.fromCharCode(0)}-${String.fromCharCode(31)}` +
@@ -119,12 +123,26 @@ export function excerpt(value, limit = EXCERPT_LIMIT) {
  * differently from the value that was grouped cannot be checked by the person
  * reading the report -- and a right-to-left override inside an invoice number
  * makes two different keys look like the same one.
+ *
+ * The four refused classes are not the whole of that promise. `excerpt` also
+ * collapses every run of whitespace to a single space, and `\s` is wider than
+ * the ASCII three: U+00A0 NO-BREAK SPACE, U+2007 FIGURE SPACE, U+3000
+ * IDEOGRAPHIC SPACE and U+FEFF ZERO WIDTH NO-BREAK SPACE all match it, and so
+ * does a second ordinary space. Accepting one of those grouped four distinct
+ * keys and printed `INV- 1` four times -- the exact defect the classes above
+ * exist to prevent, arriving through a character nobody thinks of as a
+ * control.
+ *
+ * So the promise is enforced rather than approximated: an identifier must be
+ * what `excerpt` will print of it, character for character. Legitimate text is
+ * untouched -- letters of any script, digits, punctuation and single interior
+ * spaces all survive `excerpt` unchanged and are accepted.
  */
 export function isIdentifier(value) {
   if (typeof value !== 'string') return false
   if (value.length === 0 || value.length > MAX_IDENTIFIER_LENGTH) return false
-  if (value.trim() !== value) return false
-  return !FORBIDDEN_IN_IDENTIFIER.test(value)
+  if (FORBIDDEN_IN_IDENTIFIER.test(value)) return false
+  return excerpt(value, MAX_IDENTIFIER_LENGTH) === value
 }
 
 /**

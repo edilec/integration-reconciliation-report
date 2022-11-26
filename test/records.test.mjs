@@ -73,6 +73,45 @@ test('a key component that is not a usable identifier is refused', async () => {
   assert.deepEqual(raisedRules(await apiReport(beside([{ invoiceId: 'x'.repeat(200), amount: '1.00' }]))), ['record-missing-in-destination'])
 })
 
+/**
+ * A key is grouped by its value and reported by its rendering, and the two
+ * have to be the same string.
+ *
+ * U+00A0, U+2007, U+3000 and U+FEFF all pass every control, separator and bidi
+ * class, and every one of them collapses to a plain space on the way into the
+ * report: four distinct keys, four groups, and `Key "INV- 1"` printed four
+ * times. Each is refused now, and the one key that prints as itself is the
+ * only one grouped.
+ */
+test('a key that would print as a different key is refused rather than grouped', async () => {
+  const spaces = [0x00a0, 0x2007, 0x3000, 0xfeff].map((code) => String.fromCharCode(code))
+  const report = await apiReport(fixture(
+    [...spaces.map((space) => ({ invoiceId: `INV-${space}1`, amount: '1.00' })), { invoiceId: 'INV- 1', amount: '1.00' }],
+    [],
+  ))
+
+  assert.deepEqual(raisedRules(report), ['identifier-invalid', 'record-missing-in-destination'])
+  assert.equal(findingsFor(report, 'identifier-invalid').length, 4)
+  assert.equal(report.summary.unindexed, 4)
+  assert.equal(report.summary.keys, 1, 'only the key that prints as itself was grouped')
+  assert.equal(report.status, 'incomplete')
+
+  const named = findingsFor(report, 'record-missing-in-destination').map((finding) => /^Key "([^"]+)"/.exec(finding.message)[1])
+  assert.deepEqual(named, ['INV- 1'])
+})
+
+test('a key at the length limit prints in full, so two long keys never print alike', async () => {
+  const prefix = 'x'.repeat(190)
+  const report = await apiReport(fixture(
+    [{ invoiceId: `${prefix}-1`, amount: '1.00' }, { invoiceId: `${prefix}-2`, amount: '1.00' }],
+    [],
+  ))
+
+  const named = findingsFor(report, 'record-missing-in-destination').map((finding) => /^Key "([^"]+)"/.exec(finding.message)[1])
+  assert.deepEqual(named, [`${prefix}-1`, `${prefix}-2`])
+  assert.equal(new Set(named).size, 2, 'two keys that share a 190-character prefix are still told apart in print')
+})
+
 test('a composite key names every component it is missing, once', async () => {
   const report = await apiReport({
     'reconciliation.json': planOf([AMOUNT], ['invoiceId', 'line', 'batch']),

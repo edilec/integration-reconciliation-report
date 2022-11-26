@@ -218,7 +218,9 @@ and granularity. That is all it means.
 - **Every untrusted string is sanitised** — join keys, field names, paths,
   pointers, messages, suggestions and evidence alike — of C0, DEL, the whole C1
   range, U+2028, U+2029 and the bidi controls. A key carrying one of them is
-  refused outright rather than cleaned up.
+  refused outright rather than cleaned up, and so is a key carrying whitespace
+  the report would have to collapse — a tab, a doubled space, a no-break or
+  ideographic space. A printed key is the key that was grouped, in full.
 - **Every documented limit is enforced and tested from both sides**, and every
   flag is driven through the real binary so none can be documented and ignored.
 - **Nothing opens a socket, reads a clock, reads a random source or reads the

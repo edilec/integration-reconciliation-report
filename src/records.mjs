@@ -12,7 +12,7 @@
  * them, and the caller decides what a group with more than one row means.
  */
 
-import { byCodeUnit, describeValue, excerpt, isIdentifier, isPlainObject } from './text.mjs'
+import { MAX_IDENTIFIER_LENGTH, byCodeUnit, describeValue, excerpt, isIdentifier, isPlainObject } from './text.mjs'
 
 export const RECORDS_SCHEMA_VERSION = '1'
 
@@ -130,7 +130,9 @@ export function compileRecords(sink, file, document, plan, limits) {
           ruleId: 'identifier-invalid',
           message:
             `Record ${index} carries a key field "${excerpt(name, 64)}" that is not usable as an identifier: it must be 1-200 characters, ` +
-            'without leading or trailing whitespace and without a control, separator or bidi character. A key that prints differently from the value that was grouped cannot be reconciled by hand.',
+            'without a control, separator or bidi character, and printed exactly as it is written -- so no leading or trailing whitespace, ' +
+            'no tab, and no space the report would have to collapse, such as a doubled space or a no-break space. ' +
+            'A key that prints differently from the value that was grouped cannot be reconciled by hand.',
           suggestion: 'Export the identifier as plain text; a right-to-left override inside an invoice number makes two different keys look like one.',
         })
         continue
@@ -158,7 +160,12 @@ export function compileRecords(sink, file, document, plan, limits) {
     const keyString = JSON.stringify(parts)
     let group = groups.get(keyString)
     if (group === undefined) {
-      group = { display: parts.map((part) => excerpt(part, 64)).join(' | '), rows: [] }
+      // `isIdentifier` accepted every part, so each one is at most
+      // MAX_IDENTIFIER_LENGTH characters and `excerpt` returns it verbatim.
+      // Truncating at a shorter limit here would print two keys that share a
+      // prefix identically, which is the collision this whole check exists to
+      // prevent.
+      group = { display: parts.map((part) => excerpt(part, MAX_IDENTIFIER_LENGTH)).join(' | '), rows: [] }
       groups.set(keyString, group)
     }
     // The push that makes this tool honest. `groups.set(keyString, row)` here

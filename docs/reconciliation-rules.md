@@ -99,8 +99,13 @@ export carries whatever columns it carries.
 
 A key component may be a string or a JSON integer; an integer is rendered as
 its exact decimal string, so `4711` and `"4711"` are one key. It must then be a
-usable identifier: 1 to 200 characters, no leading or trailing whitespace, and
-none of the control, separator or bidi characters listed under *Sanitisation*.
+usable identifier: 1 to 200 characters, none of the control, separator or bidi
+characters listed under *Sanitisation*, and nothing else the report would have
+to change on the way out. In practice that last condition refuses whitespace
+the rendering collapses — a tab, a doubled space, and the spaces outside ASCII
+such as U+00A0, U+2007, U+3000 and U+FEFF — because four keys that differ only
+by which space they carry would otherwise be grouped as four and printed as
+one. A single ordinary space between characters is fine.
 
 ## Normalisation
 
@@ -287,8 +292,11 @@ names, pointers, messages, suggestions and evidence — is stripped of C0
 controls U+200E, U+200F, U+202A–U+202E and U+2066–U+2069, then collapsed to one
 line and bounded. A key component carrying any of them is refused outright
 rather than cleaned up, because a key that prints differently from the value
-that was grouped cannot be reconciled by hand. Ordinary right-to-left text is
-untouched: letters carry their own direction and need no override.
+that was grouped cannot be reconciled by hand — and so is a key carrying
+whitespace the collapse would alter. What is accepted as a key component is
+printed verbatim and at its full length, never truncated to a shorter one.
+Ordinary right-to-left text is untouched: letters carry their own direction and
+need no override.
 
 ## Limits
 
