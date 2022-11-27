@@ -25,7 +25,7 @@ import { dirname, isAbsolute, normalize, resolve, sep } from 'node:path'
 import { compilePlan } from './plan.mjs'
 import { compileRecords } from './records.mjs'
 import { reconcileSides } from './reconcile.mjs'
-import { byCodeUnit, decodeUtf8, excerpt, hasForbiddenCharacter, isPlainObject } from './text.mjs'
+import { byCodeUnit, decodeUtf8, excerpt, hasForbiddenCharacter, isPlainObject, parseFailureDetail } from './text.mjs'
 
 export const TOOL_ID = 'integration-reconciliation-report'
 export const REPORT_SCHEMA_VERSION = '1'
@@ -384,7 +384,7 @@ async function loadJson(sink, file, real, limits) {
     sink.add({
       file,
       ruleId: 'input-not-json',
-      message: `${file} is not valid JSON: ${error.message}`,
+      message: `${file} is not valid JSON: ${excerpt(parseFailureDetail(error), 120)}`,
       suggestion: 'Validate the file with a JSON parser before re-running.',
     })
     return null
@@ -626,5 +626,5 @@ export {
 } from './normalize.mjs'
 export {
   EXCERPT_LIMIT, MAX_IDENTIFIER_LENGTH, byCodeUnit, decodeUtf8, describeValue,
-  excerpt, hasForbiddenCharacter, isIdentifier, isPlainObject,
+  excerpt, hasForbiddenCharacter, isIdentifier, isPlainObject, parseFailureDetail,
 } from './text.mjs'

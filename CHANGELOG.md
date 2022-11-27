@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- an input that does not parse is no longer quoted back. `JSON.parse` embeds
+  the input in one of its two error messages
+  (`Unexpected token 'A', "AKIA…" is not valid JSON`), so an export or a plan
+  short enough to be only a credential was reproduced in full by
+  `input-not-json` on stdout, in both output modes. That message was also the
+  one untrusted string reaching a finding without passing through `excerpt`,
+  so it carried control characters too. Both are fixed: `parseFailureDetail` in
+  `src/text.mjs` keeps the position, line and column and drops the quotation,
+  and the result is excerpted like everything else. Truncation alone would not
+  have helped — the quotation is at the front of the message and the bound cuts
+  from the back;
+
 ### Added
 
 - a reconciliation plan — a declared join key of 1 to 8 components and a list

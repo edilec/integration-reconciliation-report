@@ -221,6 +221,13 @@ and granularity. That is all it means.
   refused outright rather than cleaned up, and so is a key carrying whitespace
   the report would have to collapse — a tab, a doubled space, a no-break or
   ideographic space. A printed key is the key that was grouped, in full.
+- **No input is quoted back, on the error path either.** A refused field value
+  is described rather than echoed, and a file that does not parse is reported by
+  position, line and column. `JSON.parse` embeds the input in one of its two
+  error messages, so a file short enough to be only a credential would otherwise
+  be reproduced in full by its own failure — and sanitising does not remove it,
+  because the quotation is at the front of the message and the bound cuts from
+  the back.
 - **Every documented limit is enforced and tested from both sides**, and every
   flag is driven through the real binary so none can be documented and ignored.
 - **Nothing opens a socket, reads a clock, reads a random source or reads the

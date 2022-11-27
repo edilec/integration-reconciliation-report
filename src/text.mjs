@@ -171,6 +171,42 @@ export function describeValue(value) {
 }
 
 /**
+ * Say why a document would not parse, without reproducing any of it.
+ *
+ * `describeValue` above keeps a refused field value out of the report; this
+ * keeps a refused *document* out of it, and the error path is where that guard
+ * was missing. V8 reports a parse failure two ways, and one of them quotes the
+ * input: `Unexpected token 'A', "AKIAIOSFODNN7EXAMPLE" is not valid JSON`. An
+ * export or a plan short enough to be only a credential is therefore
+ * reproduced in full by its own error message, and a longer one is reproduced
+ * ten characters at a time -- a window around the offending character, drawn
+ * from wherever in the document that character sits.
+ *
+ * `excerpt` does not help. It strips control characters and cuts from the
+ * *end*; the quoted span is at the front of the message, so it survives and
+ * the position is what gets lost.
+ *
+ * The quoted form carries no position, so nothing diagnostic is lost by
+ * reducing it to the offending token. The other form is all position and no
+ * input, and is kept. The quoted window never leaves this function.
+ *
+ * The quoted form is matched first on purpose: an export whose own bytes read
+ * `at position 12` would otherwise be sliced after its own quoted copy.
+ */
+export function parseFailureDetail(error) {
+  const message = typeof error?.message === 'string' ? error.message : ''
+  const token = /^Unexpected token (.+?), (\.\.\.)?".*"(?:\.\.\.)? is not valid JSON$/s.exec(message)
+  if (token) {
+    const where = token[2] === undefined ? ' near the start' : ''
+    return `unexpected token ${excerpt(token[1], 8)}${where}`
+  }
+  const position = /at position \d+(?: \(line \d+ column \d+\))?/.exec(message)
+  if (position) return message.slice(0, position.index + position[0].length)
+  if (/^Unexpected end of JSON input$/.test(message)) return message
+  return 'it could not be parsed as JSON'
+}
+
+/**
  * Decode bytes as UTF-8, strictly.
  *
  * `fatal: true` is the whole point. Decoding leniently and then hunting for

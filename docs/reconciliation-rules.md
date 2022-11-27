@@ -298,6 +298,17 @@ printed verbatim and at its full length, never truncated to a shorter one.
 Ordinary right-to-left text is untouched: letters carry their own direction and
 need no override.
 
+Stripping is not enough for one message, so a parse failure is reported by
+position rather than by quotation. `JSON.parse` has two error messages and one
+of them embeds the input — `Unexpected token 'A', "AKIA…" is not valid JSON`
+for a short document, and a ten-character window around the offending character
+for a long one. An export or a plan short enough to be only a credential would
+otherwise be reproduced by its own error message, and the bound does not help:
+the quoted span is at the front of the message while the bound cuts from the
+back. `parseFailureDetail` keeps the position, line and column — which carry no
+input — and drops the quotation, the same principle as `describeValue` applied
+to a whole document instead of one field.
+
 ## Limits
 
 Every limit is enforced, and exceeding one produces a finding naming it and
