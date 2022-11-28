@@ -20,6 +20,17 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- `test/destination.test.mjs`, pinning the output destination this tool does not
+  have. The destination is where ten tools in this catalog accepted a path that
+  destroyed a file they were never asked to touch, four of them exiting 0; there
+  is no `--out` here and nothing under `--root` is opened for writing, and both
+  halves are now asserted through the real binary on every exit path -- the root
+  byte-identical, nothing created beside it, every output-shaped flag refused as
+  unknown with an empty stdout, and `--destination` proved to name an input to
+  read rather than a file to create. Adding an unguarded `--out` to the binary,
+  a sidecar inside the root, or a report beside the root each reddens the tests
+  named for it. The source scan in `test/guarantees.test.mjs` now also names
+  copy, link, symlink, cp, rm and the sync writers;
 - a reconciliation plan — a declared join key of 1 to 8 components and a list
   of compared fields typed `amount`, `date`, `integer` or `string` — compiled
   from data, with every unknown key refused by name at both levels, including a

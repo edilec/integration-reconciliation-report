@@ -77,7 +77,14 @@ test('no socket, clock, random source or locale-aware comparison appears in the 
 })
 
 test('nothing in the sources writes to the filesystem', async () => {
-  const refused = ['writeFile(', 'appendFile(', 'unlink(', 'rename(', 'rmdir(', 'mkdir(', 'createWriteStream(', 'truncate(', 'chmod(', 'writeFileSync', 'openSync']
+  // Every API that creates, replaces, moves or removes a filesystem entry, not
+  // only the ones a report writer would reach for first. `test/destination.test.mjs`
+  // measures what a run actually does; this says where a write could come from.
+  const refused = [
+    'writeFile(', 'appendFile(', 'unlink(', 'rename(', 'rmdir(', 'mkdir(', 'createWriteStream(',
+    'truncate(', 'chmod(', 'chown(', 'utimes(', 'copyFile(', 'symlink(', 'link(', 'cp(', 'rm(',
+    'writeFileSync', 'appendFileSync', 'openSync', 'writeSync', 'mkdtemp(',
+  ]
   for (const [name, text] of await sourceFiles()) {
     for (const needle of refused) {
       assert.equal(text.includes(needle), false, `${name} mentions ${needle}`)

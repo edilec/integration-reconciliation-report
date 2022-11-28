@@ -172,7 +172,14 @@ and granularity. That is all it means.
   precision like every other, and nothing reports it.
 - It reads no database, calls no API and opens no socket. There is no "pull the
   live side" mode.
-- It is read-only and writes nothing. A run leaves its root byte-identical.
+- It is read-only and writes nothing. There is no `--out`, no `--report` and no
+  destination of any kind: `--plan`, `--source` and `--destination` all name
+  *inputs*, and `--destination` is the second export to read, not a place to
+  write. A run leaves its root byte-identical and creates nothing beside it.
+  That matters because the output destination is where ten tools in this
+  catalog destroyed a file they were never asked to touch; a tool with no
+  destination cannot, and `test/destination.test.mjs` measures it through the
+  real binary on every exit path rather than leaving it to be true by accident.
 
 ## Guarantees, and what holds them
 
