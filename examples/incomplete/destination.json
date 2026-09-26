@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "records": [
+    {
+      "invoiceId": "INV-3001",
+      "amount": "10.00",
+      "currency": "INR",
+      "postedAt": "2026-03-01T10:00:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-3002",
+      "amount": "20.05",
+      "currency": "INR",
+      "postedAt": "2026-03-02T10:00:00Z",
+      "status": "Posted"
+    },
+    {
+      "invoiceId": "INV-3003",
+      "amount": "45.00",
+      "currency": "INR",
+      "postedAt": "2026-03-04T10:00:00Z",
+      "status": "Posted"
+    }
+  ]
+}

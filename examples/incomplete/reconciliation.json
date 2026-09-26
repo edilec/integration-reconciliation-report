@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1",
+  "key": ["invoiceId"],
+  "fields": [
+    { "name": "amount", "type": "amount", "precision": 2, "currencyField": "currency" },
+    { "name": "postedAt", "type": "date", "timezone": "+05:30", "granularity": "day" },
+    { "name": "status", "type": "string", "trim": true, "caseSensitive": false }
+  ]
+}
