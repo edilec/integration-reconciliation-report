@@ -24,8 +24,10 @@ are the whole of the evidence.
 ## Install
 
 ```sh
-npm install integration-reconciliation-report
+npm install github:edilec/integration-reconciliation-report
 ```
+
+This installs the public GitHub source; `integration-reconciliation-report` is not published to npm.
 
 Or run it from a checkout with no install step at all — the package has no
 runtime and no development dependencies.
@@ -33,8 +35,8 @@ runtime and no development dependencies.
 ## Use
 
 ```sh
-integration-reconciliation-report --root examples/clean
-integration-reconciliation-report --root examples/broken --json | jq '.findings[].ruleId'
+npx integration-reconciliation-report --root examples/clean
+npx integration-reconciliation-report --root examples/broken --json | jq '.findings[].ruleId'
 ```
 
 The JSON report goes to stdout and nothing else does, so stdout pipes straight
