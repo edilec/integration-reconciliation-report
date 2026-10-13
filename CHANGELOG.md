@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## Unreleased
+## 0.1.0 — 2026-10-14
 
 ### Fixed
 
@@ -143,4 +143,4 @@ All notable changes to this project are documented in this file.
   `docs/reconciliation-rules.md` both state what a `pass` does and does not
   mean.
 
-No release has been published.
+GitHub source release v0.1.0 — 2026-10-14.
